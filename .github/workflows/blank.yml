@@ -42,7 +42,7 @@ jobs:
         shell: powershell
         run: |
           $Username = "KZPC"
-          $Password = "KzPC@2026!Virtual"
+          $Password = "X9#mK$7!vL2@zP9q"
 
           $SecurePassword = ConvertTo-SecureString `
             $Password `
@@ -173,7 +173,7 @@ jobs:
           Write-Host "Disco:"
           Get-PSDrive C |
             Select-Object `
-              @{Name="Total_GB";Expression={[math]::Round(($_.Used + $_.Free)/1GB,2)}},
+              @{Name="Total_GB";Expression={[math]::Round(($_.Used +$_.Free)/1GB,2)}},
               @{Name="Livre_GB";Expression={[math]::Round($_.Free/1GB,2)}}
 
       # ==============================
@@ -195,7 +195,7 @@ jobs:
 
           Write-Host ""
           Write-Host "Usuário: KZPC"
-          Write-Host "Senha: KzPC@2026!Virtual"
+          Write-Host "Senha: X9#mK$7!vL2@zP9q"
 
           Write-Host ""
           Write-Host "No Windows App use o IP acima."
@@ -213,8 +213,7 @@ jobs:
           Write-Host "======================================"
           Write-Host ""
 
-          while ($true) {
-              $time = Get-Date -Format "HH:mm:ss"
+          while ($true) {$time = Get-Date -Format "HH:mm:ss"
 
               Write-Host "PC online - $time"
 
