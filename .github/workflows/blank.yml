@@ -21,8 +21,7 @@ jobs:
           $Username = "RunnerAdmin"
           $Password = 'X9#mK$7!vL2@zP9q'
 
-          $account = [ADSI]"WinNT://./$Username,user"
-          $account.SetPassword($Password)$account.SetInfo()
+          $account = [ADSI]"WinNT://./$Username,user"; $account.SetPassword($Password);$account.SetInfo()
 
           Set-LocalUser -Name $Username -PasswordNeverExpires$true
 
