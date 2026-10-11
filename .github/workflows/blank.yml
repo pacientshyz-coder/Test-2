@@ -1,4 +1,4 @@
-name: PC Virtual Windows - KZ
+Name: PC Virtual Windows - KZ
 
 on:
   workflow_dispatch:
@@ -33,12 +33,11 @@ jobs:
             -Name "UserAuthentication" `
             -Value 1
 
-          # Definir uma senha fixa e forte para o usuário administrador padrão do GitHub Actions (RunnerAdmin)
+          # Definir senha e expiração para o usuário RunnerAdmin
           $Username = "RunnerAdmin"
           $Password = "X9#mK$7!vL2@zP9q"
-          
-          $SecurePassword = ConvertTo-SecureString$Password -AsPlainText -Force
-          Set-LocalUser -Name $Username -Password$SecurePassword
+
+          net user $Username$Password
           Set-LocalUser -Name $Username -PasswordNeverExpires$True
 
           Write-Host "Ambiente RDP configurado com sucesso para o usuário $Username."
