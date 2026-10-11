@@ -14,6 +14,7 @@ jobs:
         run: |
           Write-Host "Configurando PC virtual..."
 
+          # Habilita RDP
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 1
@@ -21,9 +22,10 @@ jobs:
           $Username = "RunnerAdmin"
           $Password = 'X9#mK$7!vL2@zP9q'
 
-          $account = [ADSI]"WinNT://./$Username,user"; $account.SetPassword($Password);$account.SetInfo()
-
-          Set-LocalUser -Name $Username -PasswordNeverExpires$true
+          # Define a senha do usuário
+          $securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
+          Set-LocalUser -Name $Username -Password $securePassword
+          Set-LocalUser -Name $Username -PasswordNeverExpires $true
 
           Write-Host "Ambiente RDP configurado e senha definida com sucesso para o usuário $Username."
 
@@ -31,10 +33,18 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Baixando Tailscale..."
+          
           $url = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi"
           $installer = "$env:TEMP\tailscale.msi"
-          Invoke-WebRequest -Uri $url -OutFile$installer
+          
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          
+          Write-Host "Instalando Tailscale..."
           Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+          
+          # Aguarda o serviço iniciar
+          Start-Sleep -Seconds 10
+          
           Write-Host "Tailscale instalado."
 
       - name: Conectar Tailscale
@@ -43,12 +53,17 @@ jobs:
           TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
         run: |
           $tailscale = "C:\Program Files\Tailscale\tailscale.exe"
+          
           if (!(Test-Path $tailscale)) {
-              Write-Host "Tailscale não encontrado."
+              Write-Error "Tailscale não encontrado em $tailscale"
               exit 1
           }
-          & $tailscale up --authkey="$env:TS_AUTHKEY" --hostname="KZ-Virtual-PC"
-          Start-Sleep -Seconds 10
+          
+          Write-Host "Conectando ao Tailscale..."
+          & $tailscale up --auth-key="$env:TS_AUTHKEY" --hostname="KZ-Virtual-PC" --accept-routes --unattended
+          
+          Start-Sleep -Seconds 15
+          
           Write-Host ""
           Write-Host "===== IP TAILSCALE ====="
           & $tailscale ip -4
@@ -64,6 +79,7 @@ jobs:
         shell: powershell
         run: |
           $tailscale = "C:\Program Files\Tailscale\tailscale.exe"
+          
           Write-Host ""
           Write-Host "======================================"
           Write-Host "      DADOS PARA WINDOWS APP"
@@ -73,7 +89,7 @@ jobs:
           & $tailscale ip -4
           Write-Host ""
           Write-Host "Usuário: RunnerAdmin"
-          Write-Host "Senha: X9#mK$7!vL2@zP9q"
+          Write-Host "Senha: X9#mK`$7!vL2@zP9q"
           Write-Host "======================================"
 
       - name: Manter PC virtual ligado
@@ -84,7 +100,9 @@ jobs:
           Write-Host "       PC VIRTUAL ESTÁ ONLINE"
           Write-Host "======================================"
           Write-Host ""
-          while ($true) {$time = Get-Date -Format "HH:mm:ss"
+          
+          while ($true) {
+              $time = Get-Date -Format "HH:mm:ss"
               Write-Host "PC online - $time"
               Start-Sleep -Seconds 60
           }
