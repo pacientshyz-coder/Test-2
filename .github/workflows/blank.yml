@@ -1,4 +1,4 @@
-name: PC Virtual Windows - KZ
+Name: PC Virtual Windows - KZ
 
 on:
   workflow_dispatch:
@@ -56,6 +56,9 @@ jobs:
                 -FullName "KZ Virtual PC" `
                 -Description "Usuário do PC virtual"
           }
+
+          # Evitar que o Windows exija alteração de senha no primeiro login
+          Set-LocalUser -Name $Username -PasswordNeverExpires $True
 
           Add-LocalGroupMember `
             -Group "Administrators" `
