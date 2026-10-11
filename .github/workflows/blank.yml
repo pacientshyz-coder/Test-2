@@ -9,116 +9,74 @@ jobs:
     timeout-minutes: 350
 
     steps:
-
-      # ==============================
-      # 1. CONFIGURAÇÃO DO WINDOWS E RDP
-      # ==============================
       - name: Configurar Windows
         shell: powershell
         run: |
           Write-Host "Configurando PC virtual..."
 
-          # Ativar Remote Desktop
-          Set-ItemProperty `
-            -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
-            -Name "fDenyTSConnections" `
-            -Value 0
-
-          # Permitir conexões RDP no firewall
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 1
 
-          # Habilitar Network Level Authentication
-          Set-ItemProperty `
-            -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" `
-            -Name "UserAuthentication" `
-            -Value 1
-
-          # Definir senha e expiração para o usuário RunnerAdmin
           $Username = "RunnerAdmin"
-          $Password = "X9#mK$7!vL2@zP9q"
+          $Password = 'X9#mK$7!vL2@zP9q'
 
-          net user $Username$Password
-          Set-LocalUser -Name $Username -PasswordNeverExpires$True
+          $account = [ADSI]"WinNT://./$Username,user"
+          $account.SetPassword($Password)$account.SetInfo()
 
-          Write-Host "Ambiente RDP configurado com sucesso para o usuário $Username."
+          Set-LocalUser -Name $Username -PasswordNeverExpires$true
 
-      # ==============================
-      # 2. INSTALAR TAILSCALE
-      # ==============================
+          Write-Host "Ambiente RDP configurado e senha definida com sucesso para o usuário $Username."
+
       - name: Instalar Tailscale
         shell: powershell
         run: |
           Write-Host "Baixando Tailscale..."
-
           $url = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi"
           $installer = "$env:TEMP\tailscale.msi"
-
           Invoke-WebRequest -Uri $url -OutFile$installer
-
           Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
-
           Write-Host "Tailscale instalado."
 
-      # ==============================
-      # 3. CONECTAR TAILSCALE
-      # ==============================
       - name: Conectar Tailscale
         shell: powershell
         env:
           TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
         run: |
           $tailscale = "C:\Program Files\Tailscale\tailscale.exe"
-
           if (!(Test-Path $tailscale)) {
               Write-Host "Tailscale não encontrado."
               exit 1
           }
-
           & $tailscale up --authkey="$env:TS_AUTHKEY" --hostname="KZ-Virtual-PC"
-
           Start-Sleep -Seconds 10
-
           Write-Host ""
           Write-Host "===== IP TAILSCALE ====="
           & $tailscale ip -4
 
-      # ==============================
-      # 4. INSTALAR PROGRAMAS BÁSICOS
-      # ==============================
       - name: Instalar programas
         shell: powershell
         run: |
           Write-Host "Instalando programas..."
-
           winget install --id 7zip.7zip --silent --accept-package-agreements --accept-source-agreements --disable-interactivity -e
-
           Write-Host "Programas instalados."
 
-      # ==============================
-      # 5. MOSTRAR DADOS PARA CONEXÃO
-      # ==============================
       - name: Mostrar IP para Windows App
         shell: powershell
         run: |
           $tailscale = "C:\Program Files\Tailscale\tailscale.exe"
-
           Write-Host ""
           Write-Host "======================================"
           Write-Host "      DADOS PARA WINDOWS APP"
           Write-Host "======================================"
           Write-Host ""
-
           Write-Host "IP Tailscale:"
           & $tailscale ip -4
-
           Write-Host ""
           Write-Host "Usuário: RunnerAdmin"
           Write-Host "Senha: X9#mK$7!vL2@zP9q"
           Write-Host "======================================"
 
-      # ==============================
-      # 6. MANTER O PC RODANDO
-      # ==============================
       - name: Manter PC virtual ligado
         shell: powershell
         run: |
@@ -127,7 +85,6 @@ jobs:
           Write-Host "       PC VIRTUAL ESTÁ ONLINE"
           Write-Host "======================================"
           Write-Host ""
-
           while ($true) {$time = Get-Date -Format "HH:mm:ss"
               Write-Host "PC online - $time"
               Start-Sleep -Seconds 60
