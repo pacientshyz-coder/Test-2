@@ -1,4 +1,4 @@
-Name: PC Virtual Windows - KZ
+name: PC Virtual Windows - KZ
 
 on:
   workflow_dispatch:
