@@ -72,7 +72,22 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Instalando programas..."
-          winget install --id 7zip.7zip --silent --accept-package-agreements --accept-source-agreements --disable-interactivity -e
+
+          # Usa apenas a fonte "winget" para evitar erro do msstore
+          winget install --id 7zip.7zip `
+            --exact `
+            --source winget `
+            --silent `
+            --accept-package-agreements `
+            --accept-source-agreements `
+            --disable-interactivity
+
+          # Se já estiver instalado e não houver upgrade, trata como sucesso
+          if ($LASTEXITCODE -eq -1978335189 -or $LASTEXITCODE -eq 1) {
+              Write-Host "7-Zip já está instalado (ou sem upgrade disponível). Continuando..."
+              $global:LASTEXITCODE = 0
+          }
+
           Write-Host "Programas instalados."
 
       - name: Mostrar IP para Windows App
